@@ -1,0 +1,164 @@
+---
+title: "BDA_Assignment_1"
+author: "Pratik Bhujade"
+date: "01/11/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Question 1
+1. Created the dataset, and cleaning it
+
+```{r}
+# Importing the tidyR and zoo Library for analysis
+library(tidyr)
+library(zoo)
+# Inserting the dataset
+df <- read.csv('DiamondData.csv')
+# Removing the spelling mistake in cuts.
+df_cleaning <- df
+df_cleaning$cut[df_cleaning$cut == "Very Geod"] <-"Very Good"
+# Insert means rows in rows with na value
+df_clean <- data.frame('cut'= df_cleaning$cut, 'color' = df_cleaning$color, 'clarity' = df_cleaning$clarity)
+df_clean$carat <- na.aggregate(df_cleaning$carat)
+df_clean$table <- na.aggregate(df_cleaning$table)
+df_clean$x <- na.aggregate(df_cleaning$x)
+df_clean$y <- na.aggregate(df_cleaning$y)
+df_clean$z <- na.aggregate(df_cleaning$z)
+df_cleaning$depthh <- (2*df_clean$z/(df_clean$x+df_clean$y))*100
+df_clean$depth <- na.aggregate(df_cleaning$depthh)
+df_clean$price <- na.aggregate(df_cleaning$price)
+df_cleaned <- df_clean
+#names(df_cleaned) <- c('cut','color','clarity','carat','table','x','y','z','depth')
+summary(df_clean)
+```
+
+## Question 2
+
+Summary and Plots
+
+```{r pressure, echo=FALSE}
+# Summary Statistics for the whole dataset
+print(summary(df_cleaned))
+# Pie Chart for different cuts
+pie(summary(df_cleaned$cut), main = "Cut - Pie Chart")
+# Bar plots for different colors
+barplot(summary(df_cleaned$color), xlab = "Colors", ylab = "Frequency", main = "Color - Bar Chart")
+# Histogram for different depths
+hist(df_cleaned$depth, xlab = "Depths", ylab = "Frequency", main = "Histogram - Depth")
+# Scatterplot for carats vs Depth
+plot(df_cleaned$carat, df_cleaned$depth, xlab = "Carats", ylab = "Depth", main = "Scatterplot - Carats vs Depth")
+```
+## Question 3
+### Part A
+Histogram of price along with the summary Statistics
+```{r}
+# importing psych library for statistics
+library(psych)
+# histogram for prices
+hist(df_cleaned$price, xlab = "Price", ylab = "Distribution", main = "Histogram of Price")
+# Detailed summary statistics from psych library
+describe(df_cleaned$price)
+```
+The Histogram indicates that the distribution is positively skewed, and concentrated to the left. It also indicates that the price is not a normal distribtion, and the higest number of units lie in the distribution that is less than 5000 price.
+The summary statistics indicate that mean is 3938.64, and the media is 2401. Moreover the standard deviation is 3994.8.
+
+### Part B
+```{r}
+# Low range 0-2401, first quartile
+price_low <- 2401
+# Medium Range from 2402-5345, Third quartile
+price_med <- 5345
+# High range greater than 5345
+low <- subset(df_cleaned, price <= price_low) 
+med <- subset(df_cleaned, price <= price_med)
+high <- subset(df_cleaned, price > price_med)
+# Summary statistics for low, medium and high
+summary(low)
+summary(med)
+summary(high)
+```
+
+### Part C
+Box plot for different cuts
+```{r}
+# boxplot for prices, based on different cuts
+boxplot(df_cleaned$price~df_cleaned$cut, xlab = "Cuts", ylab = "Prices",main = "Price distribution of cuts")
+```
+
+### Part D
+```{r}
+# creating the dataframe for numerical variables
+n_df <- data.frame(df_cleaned$carat,df_cleaned$price,df_cleaned$depth,df_cleaned$table,df_cleaned$x,df_cleaned$y,df_cleaned$z)
+# Correlation for numerical variables
+cor(n_df)
+```
+
+## Question 4
+Frequencies and Scatterplots
+```{r}
+# Importing ggplot for visualization
+library(ggplot2)
+# SUmmary for different cuts
+summary(df_cleaned$cut)
+# Summary for different clarities
+summary(df_cleaned$clarity)
+# Relationship between carat and price on the basis of cuts
+ggplot(df_cleaned, aes(price, carat, color = cut)) + geom_point()
+# Relationship between carat and price on the basis of clarities
+ggplot(df_cleaned, aes(price, carat, color = clarity)) + geom_point()
+```
+## Question 5
+### Part A
+```{r}
+# creating volume dataframe
+volume =data.frame(df_cleaned$x, df_cleaned$y, df_cleaned$z)
+# putting names in it
+names(volume) <- c('x','y','z')
+# calculating volume
+volume$volume <- volume$x*volume$y*volume$z
+# adding price to the mix
+volume$price <- df_cleaned$price
+# ploting volume and price
+ggplot(volume, aes(volume, price)) + geom_point(color='blue') + geom_smooth(method = 'lm', formula = y ~ poly(x,2))
+
+```
+This indicates a polynomial regression, and it indicates that the regression is increasing in magnitude along with being positive.
+
+### Part B
+Relationship between carat and volume
+```{r}
+# adding carats to the mix
+volume$carat <- df_cleaned$carat
+# plotting volume and carat
+ggplot(volume, aes(volume, carat)) + geom_point(color='red') + geom_smooth(method = 'lm', formula = y ~ x)
+```
+No linear relationship between volum and carats.
+
+### Part C
+Relationship between table and depth
+```{r}
+# Adding table and depth to the mix
+volume$table <- df_cleaned$table
+volume$depth <- df_cleaned$depth
+# ploting table and depth 
+ggplot(volume, aes(depth, table)) + geom_point(color='green') + geom_smooth(method = 'lm', formula = y ~ x)
+```
+Negative relationship between depth and table
+### Part D
+Relationship of table with all the variables
+
+```{r}
+# finding the correlation between all the added variables
+cor(volume)
+# ploting volume, price and carats with table
+ggplot(volume, aes(volume, table)) + geom_point(color='pink') + geom_smooth(method = 'lm', formula = y ~ x)
+ggplot(volume, aes(price, table)) + geom_point(color='orange') + geom_smooth(method = 'lm', formula = y ~ x)
+ggplot(volume, aes(carat, table)) + geom_point(color='purple') + geom_smooth(method = 'lm', formula = y ~ x)
+```
+
+
